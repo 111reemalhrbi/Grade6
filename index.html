@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Listen & Discover — English Grade 6</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=DM+Sans:wght@400;500;700&family=Tajawal:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0A1A3F; --deep:#06112B; --panel:#12275A; --line:#2A4786;
+  --sky:#5CC8F5; --sky-soft:#A9E2FA; --white:#FFFFFF; --muted:#A9BCE0;
+  --lemon:#E6F36A; --good:#5BE0A0; --bad:#FF7A8A;
+  --display:'Bricolage Grotesque',system-ui,sans-serif;
+  --body:'DM Sans',system-ui,sans-serif;
+  --ar:'Tajawal',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--body);background:#030916;color:var(--white);overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button:focus-visible,textarea:focus-visible,label:focus-within{outline:4px solid var(--lemon);outline-offset:4px}
+
+/* ---------- fixed 16:9 projector stage (1920×1080, scaled to fit) ---------- */
+.stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:center center;overflow:hidden;
+  background:
+  radial-gradient(1200px 700px at 88% -10%, rgba(92,200,245,.2), transparent 60%),
+  radial-gradient(900px 600px at -10% 110%, rgba(92,200,245,.13), transparent 60%),
+  var(--navy)}
+.stage.hide-cursor{cursor:none}
+.bg{position:absolute;inset:0;z-index:0;pointer-events:none}
+.bg svg{position:absolute;inset:0;width:100%;height:100%;opacity:.55}
+
+.deck{position:absolute;inset:0;z-index:1}
+.slide{position:absolute;inset:0;padding:64px 120px 120px;display:none;flex-direction:column}
+.slide.active{display:flex;animation:enter .45s ease}
+@keyframes enter{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.slide.active{animation:none}*{transition:none!important}}
+
+/* section header — constant on every section */
+.head{display:flex;align-items:center;gap:28px;margin-bottom:34px}
+.num{font-family:var(--display);font-weight:800;font-size:120px;line-height:.9;color:transparent;-webkit-text-stroke:3px var(--sky)}
+.head-text small{display:block;color:var(--muted);font-size:24px;margin-bottom:4px}
+.head-text h2{font-family:var(--display);font-weight:800;font-size:66px;letter-spacing:-.01em;line-height:1}
+.head .ico{margin-left:auto;width:92px;height:92px;border-radius:50%;border:3px solid var(--line);display:grid;place-items:center;flex:none}
+.head .ico svg{width:46px;height:46px;stroke:var(--lemon)}
+.content{flex:1;display:flex;flex-direction:column;justify-content:center;width:100%;min-height:0}
+.prompt{font-family:var(--display);font-weight:700;font-size:48px;margin-bottom:28px;line-height:1.15}
+.prompt.sm{font-size:38px;margin-top:44px}
+.hint{color:var(--muted);font-size:28px;margin-bottom:24px}
+
+/* ---------- cover & end ---------- */
+.cover{justify-content:center;align-items:flex-start}
+.cover .grade{display:inline-flex;align-items:center;gap:12px;background:var(--lemon);color:var(--navy);font-weight:700;padding:12px 28px;border-radius:50px;margin-bottom:36px;font-size:32px}
+.cover h1{font-family:var(--display);font-weight:800;font-size:220px;line-height:.86;letter-spacing:-.035em}
+.cover h1 span{display:block;color:var(--sky)}
+.cover p{margin-top:36px;color:var(--muted);font-size:32px;max-width:820px;line-height:1.45}
+.cover .bigwave{position:absolute;right:130px;bottom:200px;display:flex;align-items:center;gap:10px;height:300px}
+.cover .bigwave i{display:block;width:16px;border-radius:16px;background:var(--sky);opacity:.85;animation:bar 1.4s ease-in-out infinite}
+.fs-hint{position:absolute;left:120px;bottom:130px;color:var(--muted);font-size:22px}
+.fs-hint kbd{border:2px solid var(--line);border-radius:8px;padding:2px 10px;font-family:var(--body);color:var(--white)}
+
+/* ---------- options ---------- */
+.opts{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.opt{background:var(--panel);border:3px solid var(--line);border-radius:22px;padding:24px 28px;text-align:left;font-size:32px;font-weight:500;transition:border-color .2s,background .2s;display:flex;align-items:center;gap:14px}
+.opt:hover{border-color:var(--sky)}
+.opt .mark{margin-left:auto;font-size:34px}
+.opt.correct{border-color:var(--good);background:rgba(91,224,160,.14)}
+.opt.wrong{border-color:var(--bad);background:rgba(255,122,138,.12)}
+.btn{display:inline-flex;align-items:center;gap:12px;background:var(--sky);color:var(--navy);font-weight:700;padding:18px 36px;border-radius:50px;font-size:28px;transition:transform .15s}
+.btn:hover{transform:translateY(-2px)}
+.btn.ghost{background:transparent;color:var(--white);border:3px solid var(--line)}
+.btn.lemon{background:var(--lemon)}
+.row{display:flex;gap:18px;flex-wrap:wrap;margin-top:30px;align-items:center}
+.feedback{margin-top:22px;font-size:30px;font-weight:500;min-height:40px;color:var(--lemon)}
+
+/* ---------- warm up ---------- */
+.warm{display:grid;grid-template-columns:1.05fr 1fr;gap:70px;align-items:center}
+.scene{border-radius:32px;overflow:hidden;border:3px solid var(--line);height:640px}
+.scene svg{width:100%;height:100%;display:block}
+.warm .opts{grid-template-columns:1fr;gap:16px}
+
+/* ---------- predictions ---------- */
+.chips{display:flex;flex-wrap:wrap;gap:18px}
+.chip{padding:20px 34px;border-radius:50px;border:3px solid var(--line);background:var(--panel);font-size:34px;font-weight:500;display:flex;gap:10px;align-items:center}
+.chip.on{border-color:var(--lemon);background:rgba(230,243,106,.14)}
+.chip.correct{border-color:var(--good)}
+.chip.wrong{border-color:var(--bad);opacity:.7}
+
+/* ---------- player ---------- */
+.player{background:var(--panel);border:3px solid var(--line);border-radius:36px;padding:44px;display:flex;flex-direction:column;gap:30px}
+.player-top{display:flex;align-items:center;gap:44px}
+.playbtn{width:150px;height:150px;border-radius:50%;background:var(--lemon);display:grid;place-items:center;flex:none;box-shadow:0 0 0 16px rgba(230,243,106,.13);transition:transform .15s}
+.playbtn:hover{transform:scale(1.05)}
+.playbtn svg{width:42%;height:42%;fill:var(--navy)}
+.wave{flex:1;display:flex;align-items:center;gap:8px;height:130px;overflow:hidden}
+.wave i{flex:1;min-width:4px;max-width:14px;border-radius:8px;background:var(--sky);height:14%}
+.player.playing .wave i{animation:bar 1s ease-in-out infinite}
+@keyframes bar{0%,100%{height:18%}50%{height:var(--h,80%)}}
+.player-ctrl{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+.pill{padding:12px 24px;border-radius:40px;border:3px solid var(--line);font-size:24px;font-weight:500}
+.pill.on{border-color:var(--sky);color:var(--sky)}
+.upload{font-size:20px;color:var(--muted);display:flex;align-items:center;gap:8px;cursor:pointer;margin-left:auto}
+.upload input{display:none}
+.upload span{text-decoration:underline}
+.script{display:none;font-size:30px;line-height:1.7;color:var(--sky-soft);border-top:2px dashed var(--line);padding-top:24px;max-height:330px;overflow-y:auto}
+.script.show{display:block}
+.script span.now{background:var(--lemon);color:var(--navy);border-radius:6px;padding:0 4px}
+.listen-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:40px}
+.listen-steps div{border-left:5px solid var(--sky);padding:8px 22px;color:var(--muted);font-size:28px}
+.listen-steps b{display:block;color:var(--white);font-size:34px;margin-bottom:4px}
+
+/* compact player for the details slide */
+.split{display:grid;grid-template-columns:.85fr 1.15fr;gap:56px;align-items:start}
+.split .player{padding:34px;gap:24px}
+.split .player-top{gap:28px}
+.split .playbtn{width:120px;height:120px}
+.split .wave{height:100px}
+.split .pill{font-size:21px;padding:10px 18px}
+.split .upload{margin-left:0}
+.split .script{font-size:24px;max-height:300px}
+
+/* ---------- question lists ---------- */
+.qlist{display:flex;flex-direction:column;gap:30px}
+.q p{font-size:36px;font-weight:700;margin-bottom:14px}
+.q .opts{gap:16px}
+.q .opt{padding:18px 24px;font-size:28px}
+.split .qlist{gap:22px}
+.split .q p{font-size:30px;margin-bottom:10px}
+.split .q .opt{padding:14px 18px;font-size:24px}
+
+/* ---------- vocabulary ---------- */
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:28px}
+.card{perspective:1400px;height:320px}
+.card button{width:100%;height:100%;display:block}
+.card-in{position:relative;width:100%;height:100%;transition:transform .6s;transform-style:preserve-3d}
+.card.flip .card-in{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;border-radius:30px;backface-visibility:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px;text-align:center}
+.front{background:var(--panel);border:3px solid var(--line)}
+.front .em{font-size:78px;margin-bottom:14px}
+.front b{font-family:var(--display);font-size:46px;font-weight:700}
+.back{background:var(--sky);color:var(--navy);transform:rotateY(180deg)}
+.back .ar{font-family:var(--ar);font-weight:700;font-size:50px;direction:rtl}
+.back small{margin-top:14px;font-size:24px;line-height:1.35}
+
+/* ---------- true / false ---------- */
+.tf{display:flex;flex-direction:column;gap:16px}
+.tf-row{display:flex;align-items:center;gap:20px;background:var(--panel);border:3px solid var(--line);border-radius:22px;padding:16px 26px}
+.tf-row p{flex:1;font-size:34px}
+.tf-row .tfb{padding:12px 28px;border-radius:40px;border:3px solid var(--line);font-weight:700;font-size:26px}
+.tf-row .res{width:46px;text-align:center;font-size:34px}
+.tf-row.ok{border-color:var(--good)}
+.tf-row.no{border-color:var(--bad)}
+
+/* ---------- order ---------- */
+.order{display:flex;flex-direction:column;gap:16px;max-width:1300px}
+.ord{display:flex;align-items:center;gap:22px;background:var(--panel);border:3px solid var(--line);border-radius:22px;padding:18px 24px}
+.ord .n{font-family:var(--display);font-weight:800;font-size:44px;color:var(--sky);width:50px;text-align:center}
+.ord p{flex:1;font-size:36px}
+.ord .mv{width:66px;height:66px;border-radius:50%;border:3px solid var(--line);font-size:30px}
+.ord .mv:hover{border-color:var(--sky)}
+.ord.ok{border-color:var(--good)}
+.ord.no{border-color:var(--bad)}
+
+/* ---------- challenge ---------- */
+.quiz-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:36px}
+.dots{display:flex;gap:12px}
+.dots i{width:70px;height:12px;border-radius:12px;background:var(--line)}
+.dots i.done{background:var(--sky)}
+.dots i.cur{background:var(--lemon)}
+.score{font-family:var(--display);font-weight:800;font-size:44px}
+.score span{color:var(--lemon)}
+#quiz .prompt{font-size:60px;margin-bottom:40px}
+#quiz .opt{font-size:36px;padding:30px 32px}
+.result{text-align:center}
+.result .stars{font-size:100px;letter-spacing:14px;margin:24px 0}
+.result h3{font-family:var(--display);font-size:64px}
+
+/* ---------- exit ticket ---------- */
+.ticket{background:var(--white);color:var(--navy);border-radius:34px;padding:50px 60px;width:1300px;margin:0 auto;position:relative}
+.ticket::before,.ticket::after{content:"";position:absolute;top:50%;width:54px;height:54px;border-radius:50%;background:var(--navy);transform:translateY(-50%)}
+.ticket::before{left:-27px}.ticket::after{right:-27px}
+.ticket h3{font-family:var(--display);font-size:50px;margin-bottom:10px;line-height:1.15}
+.ticket .starter{color:#4B5F8C;margin-bottom:20px;font-size:28px}
+.ticket textarea{width:100%;height:170px;border:3px solid #D4DDF0;border-radius:20px;padding:20px;font:inherit;font-size:30px;resize:none;color:var(--navy)}
+.faces{display:flex;gap:16px;margin:24px 0 4px;align-items:center}
+.faces span{color:#4B5F8C;margin-right:8px;font-size:26px}
+.faces button{font-size:48px;width:84px;height:84px;border-radius:50%;border:3px solid #D4DDF0}
+.faces button.on{border-color:var(--navy);background:var(--lemon)}
+.ticket .btn{background:var(--navy);color:var(--white)}
+.ticket .done{margin-top:18px;font-weight:700;color:#1C8A57;min-height:36px;font-size:28px}
+
+/* ---------- end ---------- */
+.end{justify-content:center;align-items:center;text-align:center}
+.end h1{font-family:var(--display);font-weight:800;font-size:210px;line-height:.9;letter-spacing:-.035em}
+.end p{font-size:56px;margin-top:28px;color:var(--sky)}
+.end .badge{margin-top:56px;width:230px;height:230px;border-radius:50%;background:var(--lemon);display:grid;place-items:center;font-size:110px;box-shadow:0 0 0 22px rgba(230,243,106,.14)}
+.confetti{position:absolute;inset:0;pointer-events:none;z-index:5;overflow:hidden}
+.confetti i{position:absolute;top:-60px;font-style:normal;font-size:44px;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(1200px) rotate(360deg)}}
+
+/* ---------- nav (auto-hides while presenting) ---------- */
+.nav{position:absolute;left:0;right:0;bottom:0;z-index:4;padding:22px 60px;display:flex;align-items:center;gap:22px;
+  background:linear-gradient(transparent,rgba(6,17,43,.9) 45%);transition:opacity .4s}
+.stage.idle .nav{opacity:0}
+.nav .arrow{width:72px;height:72px;border-radius:50%;border:3px solid var(--line);background:var(--navy);font-size:30px;flex:none}
+.nav .arrow:hover{border-color:var(--sky)}
+.nav .arrow:disabled{opacity:.3;cursor:default}
+.progress{flex:1;height:8px;border-radius:8px;background:var(--line);overflow:hidden}
+.progress b{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--sky),var(--lemon));transition:width .35s}
+.count{font-family:var(--display);font-weight:700;font-size:26px;min-width:100px;text-align:center;color:var(--muted)}
+.fs{font-size:22px;color:var(--muted);border:3px solid var(--line);padding:12px 22px;border-radius:40px}
+</style>
+</head>
+<body>
+
+<div class="stage" id="stage">
+<div class="bg" aria-hidden="true">
+  <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+    <g fill="none" stroke="#2A4A8E" stroke-width="1.5">
+      <circle cx="1260" cy="160" r="120"/><circle cx="1260" cy="160" r="180"/>
+      <rect x="80" y="120" width="90" height="90" rx="14" transform="rotate(18 125 165)"/>
+      <path d="M1180 760 l40 -70 l40 70 z"/>
+      <path d="M0 700 C 180 640, 300 780, 480 720 S 800 640, 980 720 S 1300 800, 1440 720" stroke="#1E3C7A" stroke-width="2"/>
+      <path d="M0 740 C 180 680, 300 820, 480 760 S 800 680, 980 760 S 1300 840, 1440 760" stroke="#1B3570"/>
+    </g>
+    <g fill="#E6F36A" opacity=".6"><path d="M320 90 l4 10 l10 4 l-10 4 l-4 10 l-4 -10 l-10 -4 l10 -4z"/><path d="M1080 520 l3 8 l8 3 l-8 3 l-3 8 l-3 -8 l-8 -3 l8 -3z"/></g>
+  </svg>
+</div>
+
+<main class="deck" id="deck">
+
+<!-- ===== COVER ===== -->
+<section class="slide cover active" aria-label="Title">
+  <div class="grade">🎧 English · Grade 6</div>
+  <h1>LISTEN &<span>DISCOVER</span></h1>
+  <p>Today we listen to Omar's story about a special family day out. Get your ears ready!</p>
+  <div class="bigwave" id="bigwave"></div>
+  <div class="fs-hint">Press <kbd>F</kbd> for full screen · <kbd>→</kbd> next slide</div>
+</section>
+
+<!-- ===== 01 WARM UP ===== -->
+<section class="slide" aria-label="Warm up">
+  <div class="head"><div class="num">01</div><div class="head-text"><small>Let's start</small><h2>WARM UP</h2></div>
+    <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/><circle cx="12" cy="12" r="4"/></svg></div></div>
+  <div class="content">
+    <div class="warm">
+      <div class="scene">
+        <svg viewBox="0 0 400 300" aria-label="An underwater glass tunnel with fish and a turtle">
+          <defs><linearGradient id="w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5CC8F5"/><stop offset="1" stop-color="#0A1A3F"/></linearGradient></defs>
+          <rect width="400" height="300" fill="url(#w)"/>
+          <path d="M40 300 V170 A160 140 0 0 1 360 170 V300" fill="rgba(255,255,255,.08)" stroke="#fff" stroke-opacity=".5" stroke-width="3"/>
+          <path d="M80 300 V185 A120 100 0 0 1 320 185 V300" fill="none" stroke="#fff" stroke-opacity=".25" stroke-width="2"/>
+          <g fill="#E6F36A"><path d="M110 90 q25 -18 50 0 q-25 18 -50 0z"/><path d="M110 90 l-14 -10 v20z"/></g>
+          <g fill="#FF9F7A"><path d="M250 60 q20 -14 40 0 q-20 14 -40 0z"/><path d="M290 60 l12 -8 v16z"/></g>
+          <g fill="#A9E2FA"><path d="M200 130 q16 -11 32 0 q-16 11 -32 0z"/><path d="M200 130 l-10 -7 v14z"/></g>
+          <g transform="translate(290 120)"><ellipse rx="30" ry="18" fill="#5BE0A0"/><circle cx="34" cy="-2" r="8" fill="#5BE0A0"/><ellipse rx="20" ry="11" fill="#2E9E6B"/></g>
+          <g fill="#06112B"><path d="M20 40 q60 -20 110 0 l-25 6 l20 16 q-50 -8 -105 -22z" opacity=".75"/></g>
+          <g fill="#fff" opacity=".6"><circle cx="70" cy="140" r="4"/><circle cx="78" cy="118" r="3"/><circle cx="72" cy="100" r="2"/><circle cx="340" cy="210" r="4"/><circle cx="346" cy="190" r="2.5"/></g>
+          <g fill="#06112B" opacity=".85"><circle cx="170" cy="282" r="12"/><rect x="160" y="292" width="20" height="10" rx="4"/><circle cx="220" cy="286" r="9"/><rect x="212" y="294" width="16" height="8" rx="3"/></g>
+        </svg>
+      </div>
+      <div>
+        <div class="prompt">Look at the picture. Where are these people?</div>
+        <div class="opts" id="warmOpts">
+          <button class="opt" data-ok="0">🦁 At a zoo<span class="mark"></span></button>
+          <button class="opt" data-ok="1">🐠 At an aquarium<span class="mark"></span></button>
+          <button class="opt" data-ok="0">🏖️ At the beach<span class="mark"></span></button>
+        </div>
+        <div class="feedback" id="warmFb"></div>
+        <p class="hint" style="margin-top:14px">Talk to your partner: Have you ever visited a place like this?</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 02 BEFORE LISTENING ===== -->
+<section class="slide" aria-label="Before listening">
+  <div class="head"><div class="num">02</div><div class="head-text"><small>Predict</small><h2>BEFORE LISTENING</h2></div>
+    <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/></svg></div></div>
+  <div class="content">
+    <div class="prompt">Omar visited an aquarium with his family. Which animals do you think he saw?</div>
+    <p class="hint">Choose your guesses. We will check them after we listen.</p>
+    <div class="chips" id="predChips">
+      <button class="chip" data-ok="1">🦈 Sharks</button>
+      <button class="chip" data-ok="0">🦁 Lions</button>
+      <button class="chip" data-ok="1">🐬 Dolphins</button>
+      <button class="chip" data-ok="1">🐢 Sea turtles</button>
+      <button class="chip" data-ok="0">🐪 Camels</button>
+      <button class="chip" data-ok="1">🐟 Colorful fish</button>
+      <button class="chip" data-ok="0">🐧 Penguins</button>
+    </div>
+    <div class="prompt sm">What do you think Omar did there? Say one idea.</div>
+    <div class="row"><button class="btn ghost" id="predCheck">✔ Check my guesses (after listening)</button></div>
+    <div class="feedback" id="predFb"></div>
+  </div>
+</section>
+
+<!-- ===== 03 LISTEN ===== -->
+<section class="slide" aria-label="Listen">
+  <div class="head"><div class="num">03</div><div class="head-text"><small>First listening</small><h2>LISTEN 🎧</h2></div>
+    <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4" height="7" rx="1.5"/><rect x="17" y="14" width="4" height="7" rx="1.5"/></svg></div></div>
+  <div class="content">
+    <div class="player" data-player></div>
+    <div class="listen-steps">
+      <div><b>Listen</b>Close your book and just listen.</div>
+      <div><b>Think</b>Who is speaking? Where is he?</div>
+      <div><b>Check</b>Were your guesses right?</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 04 UNDERSTAND ===== -->
+<section class="slide" aria-label="Understand">
+  <div class="head"><div class="num">04</div><div class="head-text"><small>Main ideas</small><h2>UNDERSTAND</h2></div>
+    <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.4 1 1.1 1 1.8V16h5v-.3c0-.7.4-1.4 1-1.8A6 6 0 0 0 12 3z"/></svg></div></div>
+  <div class="content">
+    <div class="qlist" data-quiz>
+      <div class="q"><p>1. Who is telling the story?</p><div class="opts">
+        <button class="opt" data-ok="1">Omar<span class="mark"></span></button><button class="opt">Lina<span class="mark"></span></button><button class="opt">Omar's father<span class="mark"></span></button></div></div>
+      <div class="q"><p>2. Where did the family go?</p><div class="opts">
+        <button class="opt">To the zoo<span class="mark"></span></button><button class="opt" data-ok="1">To the city aquarium<span class="mark"></span></button><button class="opt">To a museum<span class="mark"></span></button></div></div>
+      <div class="q"><p>3. Which animals did Lina love?</p><div class="opts">
+        <button class="opt">The dolphins<span class="mark"></span></button><button class="opt">The sharks<span class="mark"></span></button><button class="opt" data-ok="1">The sea turtles<span class="mark"></span></button></div></div>
+      <div class="q"><p>4. How did Omar feel about the day?</p><div class="opts">
+        <button class="opt">Bored<span class="mark"></span></button><button class="opt" data-ok="1">Happy — it was amazing<span class="mark"></span></button><button class="opt">Tired and sad<span class="mark"></span></button></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 05 LISTEN FOR DETAILS ===== -->
+<section class="slide" aria-label="Listen for details">
+  <div class="head"><div class="num">05</div><div class="head-text"><small>Second listening</small><h2>LISTEN FOR DETAILS</h2></div>
+    <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></div></div>
+  <div class="content">
+    <div class="split">
+      <div class="player" data-player></div>
+      <div class="qlist" data-quiz>
+        <div class="q"><p>What time did they leave home?</p><div class="opts">
+          <button class="opt">8:00<span class="mark"></span></button><button class="opt" data-ok="1">9:00<span class="mark"></span></button><button class="opt">12:00<span class="mark"></span></button></div></div>
+        <div class="q"><p>How long did they drive?</p><div class="opts">
+          <button class="opt">One hour<span class="mark"></span></button><button class="opt">Ten minutes<span class="mark"></span></button><button class="opt" data-ok="1">Thirty minutes<span class="mark"></span></button></div></div>
+        <div class="q"><p>What did Omar eat for lunch?</p><div class="opts">
+          <button class="opt" data-ok="1">A chicken sandwich<span class="mark"></span></button><button class="opt">Pizza<span class="mark"></span></button><button class="opt">Fish and rice<span class="mark"></span></button></div></div>
+        <div class="q"><p>What did he buy from the gift shop?</p><div class="opts">
+          <button class="opt">A red shark toy<span class="mark"></span></button><button class="opt" data-ok="1">A blue whale toy<span class="mark"></span></button><button class="opt">A book<span class="mark"></span></button></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 06 VOCABULARY ===== -->
+<section class="slide" aria-label="Vocabulary">
+  <div class="head"><div class="num">06</div><div class="head-text"><small>Tap a card to flip it</small><h2>VOCABULARY</h2></div>
+    <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="13" height="16" rx="2"/><path d="M8 3h11a2 2 0 0 1 2 2v13"/></svg></div></div>
+  <div class="content"><div class="cards" id="cards"></div></div>
+</section>
+
+<!-- ===== 07 TRUE OR FALSE ===== -->
+<section class="slide" aria-label="True or false">
+  <div class="head"><div class="num">07</div><div class="head-text"><small>Read and decide</small><h2>TRUE OR FALSE</h2></div>
+    <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M4 12l4 4 8-9"/><path d="M15 15l5 5M20 15l-5 5"/></svg></div></div>
+  <div class="content"><div class="tf" id="tf"></div><div class="feedback" id="tfFb"></div></div>
+</section>
+
+<!-- ===== 08 PUT IT IN ORDER ===== -->
+<section class="slide" aria-label="Put it in order">
+  <div class="head"><div class="num">08</div><div class="head-text"><small>Use the arrows to move the events</small><h2>PUT IT IN ORDER</h2></div>
+    <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M8 6h12M8 12h12M8 18h12M4 6v.01M4 12v.01M4 18v.01"/></svg></div></div>
+  <div class="content">
+    <div class="order" id="order"></div>
+    <div class="row"><button class="btn" id="ordCheck">Check order</button><button class="btn ghost" id="ordShuffle">Shuffle again</button></div>
+    <div class="feedback" id="ordFb"></div>
+  </div>
+</section>
+
+<!-- ===== 09 CHALLENGE ===== -->
+<section class="slide" aria-label="Challenge">
+  <div class="head"><div class="num">09</div><div class="head-text"><small>5 questions · 1 point each</small><h2>CHALLENGE 🏆</h2></div>
+    <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4zM7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4"/></svg></div></div>
+  <div class="content" id="quiz"></div>
+</section>
+
+<!-- ===== 10 EXIT TICKET ===== -->
+<section class="slide" aria-label="Exit ticket">
+  <div class="head"><div class="num">10</div><div class="head-text"><small>Before you go</small><h2>EXIT TICKET</h2></div>
+    <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M3 8a2 2 0 0 0 2-2h14a2 2 0 0 0 2 2v8a2 2 0 0 0-2 2H5a2 2 0 0 0-2-2z"/><path d="M12 6v12" stroke-dasharray="2 2"/></svg></div></div>
+  <div class="content">
+    <div class="ticket">
+      <h3>What was your favorite part of Omar's trip? Why?</h3>
+      <p class="starter">Start with: “My favorite part was … because …”</p>
+      <textarea id="exitText" aria-label="Your answer"></textarea>
+      <div class="faces" id="faces"><span>How well did you understand the listening?</span>
+        <button aria-label="Not well">😕</button><button aria-label="Okay">🙂</button><button aria-label="Very well">🤩</button></div>
+      <div class="row"><button class="btn" id="exitSend">Hand in my ticket</button></div>
+      <div class="done" id="exitDone"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== END ===== -->
+<section class="slide end" aria-label="Great job">
+  <h1>GREAT JOB! 🌟</h1>
+  <p>You are an excellent listener!</p>
+  <div class="badge">🎧</div>
+</section>
+
+</main>
+
+<nav class="nav">
+  <button class="arrow" id="prev" aria-label="Previous slide">←</button>
+  <div class="progress"><b id="bar"></b></div>
+  <span class="count" id="count">1 / 12</span>
+  <button class="fs" id="fs">⛶ Full screen</button>
+  <button class="arrow" id="next" aria-label="Next slide">→</button>
+</nav>
+</div>
+
+<script>
+/* ================== LISTENING TEXT ================== */
+const SCRIPT = [
+  "Hi, I'm Omar.",
+  "Last Friday, my family and I visited the city aquarium.",
+  "We left home at nine o'clock in the morning and drove for thirty minutes.",
+  "First, we bought our tickets at the gate.",
+  "Then, we walked through a long glass tunnel.",
+  "Sharks and colorful fish swam above our heads!",
+  "My little sister, Lina, loved the sea turtles.",
+  "After that, we watched a dolphin show.",
+  "The dolphins jumped very high and splashed water on us. Everyone laughed!",
+  "At twelve o'clock, we had lunch at the café.",
+  "I ate a chicken sandwich and drank orange juice.",
+  "Finally, I bought a small blue whale toy from the gift shop.",
+  "It was an amazing day, and I want to go again next year!"
+];
+
+/* ================== NAVIGATION ================== */
+const slides=[...document.querySelectorAll('.slide')];
+let cur=0;
+function go(i){
+  if(i<0||i>=slides.length)return;
+  slides[cur].classList.remove('active');
+  cur=i;slides[cur].classList.add('active');slides[cur].scrollTop=0;
+  document.getElementById('bar').style.width=(cur/(slides.length-1)*100)+'%';
+  document.getElementById('count').textContent=(cur+1)+' / '+slides.length;
+  document.getElementById('prev').disabled=cur===0;
+  document.getElementById('next').disabled=cur===slides.length-1;
+  stopAudio();
+  if(slides[cur].classList.contains('end'))confetti();
+}
+document.getElementById('prev').onclick=()=>go(cur-1);
+document.getElementById('next').onclick=()=>go(cur+1);
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='TEXTAREA')return;
+  const k=e.key;
+  if(k==='ArrowRight'||k==='PageDown'||k==='ArrowDown'){e.preventDefault();go(cur+1)}
+  else if(k==='ArrowLeft'||k==='PageUp'||k==='ArrowUp'){e.preventDefault();go(cur-1)}
+  else if(k==='Home')go(0);
+  else if(k==='End')go(slides.length-1);
+  else if(k==='f'||k==='F')toggleFS();
+  else if(k==='b'||k==='B'||k==='.')togglePlay();
+});
+function toggleFS(){
+  if(!document.fullscreenElement)document.documentElement.requestFullscreen?.();else document.exitFullscreen?.();
+}
+document.getElementById('fs').onclick=toggleFS;
+
+/* scale the 1920×1080 stage to any screen / projector */
+const stage=document.getElementById('stage');
+function fit(){
+  const s=Math.min(innerWidth/1920,innerHeight/1080);
+  stage.style.transform=`translate(-50%,-50%) scale(${s})`;
+}
+addEventListener('resize',fit);fit();
+
+/* hide controls + cursor when the mouse is still */
+let idleT;
+function wake(){stage.classList.remove('idle','hide-cursor');clearTimeout(idleT);
+  idleT=setTimeout(()=>stage.classList.add('idle','hide-cursor'),2500)}
+['mousemove','mousedown','touchstart'].forEach(ev=>addEventListener(ev,wake));wake();
+
+/* cover wave */
+const bw=document.getElementById('bigwave');
+for(let i=0;i<18;i++){const b=document.createElement('i');b.style.setProperty('--h',(30+Math.random()*70)+'%');b.style.animationDelay=(i*.08)+'s';bw.appendChild(b)}
+
+/* ================== AUDIO PLAYER ================== */
+let playing=false, idx=0, token=0, rate=0.9, customAudio=null, voice=null;
+const players=[...document.querySelectorAll('[data-player]')];
+const playIcon='<svg viewBox="0 0 24 24"><path d="M7 4l14 8-14 8z"/></svg>';
+const pauseIcon='<svg viewBox="0 0 24 24"><rect x="5" y="4" width="5" height="16" rx="1"/><rect x="14" y="4" width="5" height="16" rx="1"/></svg>';
+
+players.forEach(p=>{
+  p.innerHTML=`
+    <div class="player-top">
+      <button class="playbtn" aria-label="Play">${playIcon}</button>
+      <div class="wave">${Array.from({length:34},(_,i)=>`<i style="--h:${25+Math.random()*75}%;animation-delay:${(i%9)*.09}s"></i>`).join('')}</div>
+    </div>
+    <div class="player-ctrl">
+      <button class="pill restart">⟲ Start again</button>
+      <button class="pill speed on" data-r="0.9">Normal</button>
+      <button class="pill speed" data-r="0.7">Slow</button>
+      <button class="pill toggle">Show script</button>
+      <label class="upload">🎵 <span>Use my own audio file</span><input type="file" accept="audio/*"></label>
+    </div>
+    <div class="script">${SCRIPT.map((s,i)=>`<span data-s="${i}">${s}</span>`).join(' ')}</div>`;
+  p.querySelector('.playbtn').onclick=togglePlay;
+  p.querySelector('.restart').onclick=()=>{stopAudio();idx=0;if(customAudio)customAudio.currentTime=0;togglePlay()};
+  p.querySelectorAll('.speed').forEach(b=>b.onclick=()=>{
+    rate=+b.dataset.r;
+    document.querySelectorAll('.speed').forEach(x=>x.classList.toggle('on',x.dataset.r===b.dataset.r));
+    if(customAudio)customAudio.playbackRate=rate<0.9?0.8:1;
+    if(playing&&!customAudio){const k=idx;stopAudio();idx=k;togglePlay()}
+  });
+  p.querySelector('.toggle').onclick=e=>{
+    const sc=p.querySelector('.script');sc.classList.toggle('show');
+    e.target.textContent=sc.classList.contains('show')?'Hide script':'Show script';
+  };
+  p.querySelector('input').onchange=e=>{
+    const f=e.target.files[0];if(!f)return;
+    stopAudio();
+    customAudio=new Audio(URL.createObjectURL(f));
+    customAudio.onended=()=>{playing=false;updateUI()};
+    document.querySelectorAll('.upload span').forEach(s=>s.textContent='✔ '+f.name);
+  };
+});
+
+function pickVoice(){
+  const v=speechSynthesis.getVoices().filter(v=>v.lang.startsWith('en'));
+  voice=v.find(x=>/Google US|Samantha|Aria|Jenny/.test(x.name))||v.find(x=>x.lang==='en-US')||v[0]||null;
+}
+if('speechSynthesis' in window){pickVoice();speechSynthesis.onvoiceschanged=pickVoice}
+
+function speakFrom(i,t){
+  if(t!==token)return;
+  if(i>=SCRIPT.length){playing=false;idx=0;highlight(-1);updateUI();return}
+  idx=i;highlight(i);
+  const u=new SpeechSynthesisUtterance(SCRIPT[i]);
+  u.lang='en-US';u.rate=rate;if(voice)u.voice=voice;
+  u.onend=()=>{if(playing&&t===token)setTimeout(()=>speakFrom(i+1,t),250)};
+  speechSynthesis.speak(u);
+}
+function togglePlay(){
+  if(customAudio){
+    if(customAudio.paused){customAudio.play();playing=true}else{customAudio.pause();playing=false}
+    updateUI();return;
+  }
+  if(!('speechSynthesis' in window)){alert('This browser cannot read the text aloud. Please upload an audio file.');return}
+  if(playing){playing=false;token++;speechSynthesis.cancel()}
+  else{playing=true;token++;speechSynthesis.cancel();speakFrom(idx,token)}
+  updateUI();
+}
+function stopAudio(){
+  playing=false;token++;
+  if('speechSynthesis' in window)speechSynthesis.cancel();
+  if(customAudio)customAudio.pause();
+  updateUI();
+}
+function highlight(i){document.querySelectorAll('.script span').forEach(s=>s.classList.toggle('now',+s.dataset.s===i))}
+function updateUI(){
+  players.forEach(p=>{
+    p.classList.toggle('playing',playing);
+    const b=p.querySelector('.playbtn');b.innerHTML=playing?pauseIcon:playIcon;b.setAttribute('aria-label',playing?'Pause':'Play');
+  });
+}
+
+/* ================== MULTIPLE CHOICE (warm-up, understand, details) ================== */
+function bindChoice(group,onDone){
+  const btns=[...group.querySelectorAll('.opt')];
+  btns.forEach(b=>b.onclick=()=>{
+    if(group.dataset.done)return;
+    group.dataset.done=1;
+    btns.forEach(x=>{
+      if(x.dataset.ok==='1'){x.classList.add('correct');x.querySelector('.mark').textContent='✔️'}
+    });
+    if(b.dataset.ok!=='1'){b.classList.add('wrong');b.querySelector('.mark').textContent='❌'}
+    onDone&&onDone(b.dataset.ok==='1');
+  });
+}
+bindChoice(document.getElementById('warmOpts'),ok=>{
+  document.getElementById('warmFb').textContent=ok?'Yes! It is an aquarium — a place to see sea animals. 🐠':'Good try! Look at the fish and the glass tunnel. It is an aquarium.';
+});
+document.querySelectorAll('[data-quiz] .q .opts').forEach(g=>bindChoice(g));
+
+/* ================== PREDICTIONS ================== */
+const chips=[...document.querySelectorAll('#predChips .chip')];
+chips.forEach(c=>c.onclick=()=>{if(!c.dataset.locked)c.classList.toggle('on')});
+document.getElementById('predCheck').onclick=()=>{
+  let right=0;
+  chips.forEach(c=>{
+    c.dataset.locked=1;
+    const ok=c.dataset.ok==='1', on=c.classList.contains('on');
+    if(ok){c.classList.add('correct');if(on)right++;c.textContent+=' ✔️'}
+    else if(on){c.classList.add('wrong');c.textContent+=' ❌'}
+  });
+  document.getElementById('predFb').textContent=`You guessed ${right} of 4 animals correctly! Omar saw sharks, colorful fish, sea turtles and dolphins.`;
+};
+
+/* ================== VOCABULARY ================== */
+const VOCAB=[
+  ['🐠','aquarium','حوض الأحياء المائية','We visited the city aquarium.'],
+  ['🎟️','ticket','تذكرة','We bought our tickets at the gate.'],
+  ['🚪','gate','بوابة','We waited at the gate.'],
+  ['🌀','tunnel','نفق','We walked through a glass tunnel.'],
+  ['🦈','shark','سمكة القرش','Sharks swam above our heads.'],
+  ['🐢','turtle','سلحفاة','Lina loved the sea turtles.'],
+  ['💦','splash','يرشّ / يبلّل','The dolphins splashed water on us.'],
+  ['🎁','gift shop','محل الهدايا','I bought a toy from the gift shop.']
+];
+document.getElementById('cards').innerHTML=VOCAB.map(v=>`
+  <div class="card"><button aria-label="Flip card: ${v[1]}"><div class="card-in">
+    <div class="face front"><div class="em">${v[0]}</div><b>${v[1]}</b></div>
+    <div class="face back"><div class="ar">${v[2]}</div><small>${v[3]}</small></div>
+  </div></button></div>`).join('');
+document.querySelectorAll('.card button').forEach(b=>b.onclick=()=>b.parentElement.classList.toggle('flip'));
+
+/* ================== TRUE / FALSE ================== */
+const TF=[
+  ['Omar visited the aquarium last Friday.',true],
+  ['They went to the aquarium by bus.',false],
+  ['They walked through a long glass tunnel.',true],
+  ['Omar loved the sea turtles the most.',false],
+  ['The dolphins splashed water on the family.',true],
+  ['Omar drank apple juice at lunch.',false]
+];
+let tfScore=0,tfDone=0;
+document.getElementById('tf').innerHTML=TF.map((t,i)=>`
+  <div class="tf-row" data-i="${i}"><p>${i+1}. ${t[0]}</p>
+  <button class="tfb" data-v="1">True</button><button class="tfb" data-v="0">False</button><span class="res"></span></div>`).join('');
+document.querySelectorAll('.tf-row').forEach(r=>{
+  r.querySelectorAll('.tfb').forEach(b=>b.onclick=()=>{
+    if(r.dataset.done)return;r.dataset.done=1;
+    const ok=(b.dataset.v==='1')===TF[r.dataset.i][1];
+    r.classList.add(ok?'ok':'no');r.querySelector('.res').textContent=ok?'✔️':'❌';
+    b.style.borderColor=ok?'var(--good)':'var(--bad)';
+    if(ok)tfScore++;tfDone++;
+    if(tfDone===TF.length)document.getElementById('tfFb').textContent=`You got ${tfScore} / ${TF.length} correct!`;
+  });
+});
+
+/* ================== ORDER ================== */
+const EVENTS=[
+  'They bought tickets at the gate.',
+  'They walked through a glass tunnel.',
+  'They watched a dolphin show.',
+  'They had lunch at the café.',
+  'Omar bought a blue whale toy.'
+];
+let ord=[];
+function shuffle(){
+  do{ord=EVENTS.map((_,i)=>i).sort(()=>Math.random()-.5)}while(ord.every((v,i)=>v===i));
+  drawOrder();document.getElementById('ordFb').textContent='';
+}
+function drawOrder(){
+  document.getElementById('order').innerHTML=ord.map((e,i)=>`
+    <div class="ord"><span class="n">${i+1}</span><p>${EVENTS[e]}</p>
+    <button class="mv" data-i="${i}" data-d="-1" aria-label="Move up">↑</button>
+    <button class="mv" data-i="${i}" data-d="1" aria-label="Move down">↓</button></div>`).join('');
+  document.querySelectorAll('.mv').forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.i,j=i+ +b.dataset.d;if(j<0||j>=ord.length)return;
+    [ord[i],ord[j]]=[ord[j],ord[i]];drawOrder();
+  });
+}
+document.getElementById('ordCheck').onclick=()=>{
+  let n=0;
+  document.querySelectorAll('.ord').forEach((r,i)=>{const ok=ord[i]===i;r.classList.add(ok?'ok':'no');if(ok)n++});
+  document.getElementById('ordFb').textContent=n===EVENTS.length?'Perfect order! 🌟':`${n} of ${EVENTS.length} are in the right place. Move the red ones and check again.`;
+};
+document.getElementById('ordShuffle').onclick=shuffle;
+shuffle();
+
+/* ================== CHALLENGE QUIZ ================== */
+const QUIZ=[
+  ['Who is Lina?',['Omar\'s friend','Omar\'s little sister','Omar\'s teacher'],1],
+  ['What swam above their heads in the tunnel?',['Birds','Sharks and colorful fish','Dolphins'],1],
+  ['What did the dolphins do?',['They jumped and splashed water','They slept','They sang'],0],
+  ['When did they have lunch?',['At ten o\'clock','At one o\'clock','At twelve o\'clock'],2],
+  ['What does Omar want to do next year?',['Visit a zoo','Go to the aquarium again','Buy a dolphin'],1]
+];
+let qi=0,qs=0;
+function drawQuiz(){
+  const box=document.getElementById('quiz');
+  const dots=QUIZ.map((_,i)=>`<i class="${i<qi?'done':i===qi?'cur':''}"></i>`).join('');
+  if(qi>=QUIZ.length){
+    const stars='⭐'.repeat(qs)+'☆'.repeat(QUIZ.length-qs);
+    const msg=qs===5?'Amazing! A perfect score!':qs>=3?'Well done! Great listening.':'Good effort! Listen once more and try again.';
+    box.innerHTML=`<div class="result"><div class="score">Score: <span>${qs}</span> / ${QUIZ.length}</div>
+      <div class="stars">${stars}</div><h3>${msg}</h3>
+      <div class="row" style="justify-content:center"><button class="btn lemon" id="qAgain">Play again</button></div></div>`;
+    document.getElementById('qAgain').onclick=()=>{qi=0;qs=0;drawQuiz()};
+    return;
+  }
+  const q=QUIZ[qi];
+  box.innerHTML=`<div class="quiz-top"><div class="dots">${dots}</div><div class="score">Score: <span>${qs}</span></div></div>
+    <div class="prompt">${qi+1}. ${q[0]}</div>
+    <div class="opts" id="qOpts">${q[1].map((o,i)=>`<button class="opt" ${i===q[2]?'data-ok="1"':''}>${o}<span class="mark"></span></button>`).join('')}</div>
+    <div class="row"><button class="btn" id="qNext" style="visibility:hidden">${qi===QUIZ.length-1?'See my score':'Next question'}</button></div>`;
+  bindChoice(document.getElementById('qOpts'),ok=>{
+    if(ok)qs++;
+    document.querySelector('#quiz .score span').textContent=qs;
+    document.getElementById('qNext').style.visibility='visible';
+  });
+  document.getElementById('qNext').onclick=()=>{qi++;drawQuiz()};
+}
+drawQuiz();
+
+/* ================== EXIT TICKET ================== */
+const faceBtns=[...document.querySelectorAll('#faces button')];
+faceBtns.forEach(b=>b.onclick=()=>faceBtns.forEach(x=>x.classList.toggle('on',x===b)));
+document.getElementById('exitSend').onclick=()=>{
+  const t=document.getElementById('exitText').value.trim();
+  document.getElementById('exitDone').textContent=t.length<5?'Write one sentence first, then hand in your ticket.':'Ticket handed in. Thank you! ✔️';
+};
+
+/* ================== CONFETTI ================== */
+function confetti(){
+  const c=document.createElement('div');c.className='confetti';
+  const s=['⭐','🌟','✨','🎧','💛','💙'];
+  for(let i=0;i<40;i++){
+    const e=document.createElement('i');e.textContent=s[i%s.length];
+    e.style.left=Math.random()*100+'vw';e.style.animationDuration=(2.5+Math.random()*2.5)+'s';e.style.animationDelay=Math.random()*1.2+'s';
+    c.appendChild(e);
+  }
+  stage.appendChild(c);setTimeout(()=>c.remove(),6500);
+}
+
+go(0);
+</script>
+</body>
+</html>
